@@ -23,6 +23,9 @@ Parameters:
     MinLength: '4'
     MaxLength: '255'
     ConstraintDescription: must contain atleast 4 characters.
+  KeyName:
+    Description: Name of the key pair attached to your EC2 instance for SSH login.
+    Type: String
   Size:
     Description: Instance Type
     Type: String
@@ -31,6 +34,13 @@ Parameters:
     - Standard.VPN-t3.micro
     - High.Speed.VPN-t3.medium
     - Ultra.High.Speed.VPN-m5.xlarge
+
+Conditions:
+  HasKeyName:
+    Fn::Not:
+      - Fn::Equals:
+        - ""
+        - Ref: KeyName
 
 Mappings:
   AWSInstanceType2Arch:
@@ -92,6 +102,11 @@ Resources:
         - AWSInstanceType2Arch
         - Ref: Size
         - InstanceType
+      KeyName:
+        Fn::If:
+        - HasKeyName
+        - Ref: KeyName
+        - Ref: AWS::NoValue
       SecurityGroups:
       - Ref: VPNSecurityGroup
       Tags:
@@ -155,6 +170,14 @@ Resources:
       - IpProtocol: udp
         FromPort: '1701'
         ToPort: '1701'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: '-1'
+        ToPort: '-1'
         CidrIp: 0.0.0.0/0
 Outputs:
   VPNServerAddress:
